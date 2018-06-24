@@ -6,6 +6,7 @@ export default class Number extends Component {
   constructor(props) {
     super(props);
     this.state = {disabled:false};
+    this.props.parent.addNumber(this);
   }
   static propTypes = {
     value: PropTypes.number.isRequired,
@@ -36,7 +37,8 @@ export default class Number extends Component {
   }
 
   render() {
-    return <TouchableOpacity disabled = {this.state.disabled} onPress = { () => {this.props.parent.pressed(this.props.value) ; this.press();}}
+    return <TouchableOpacity disabled = {this.state.disabled}
+      onPress = { () => {this.props.parent.pressed(this.props.value) ; this.press();}}
       style = { [styles.number , this.posStyle(this.props.idx) , this.colStyle()]}>
       <Text style = {styles.text}>
         {this.props.value}

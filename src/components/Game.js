@@ -11,8 +11,17 @@ export default class Game extends Component {
     return Math.floor(x*Math.random());
   }
 
-  target = 0;
+  numbersComponent = [];
+  addNumber(number) {
+    this.numbersComponent.push(number);
+  }
 
+  refresh() {
+    this.currentSum = 0;
+    this.numbersComponent.map( (numberComponent) => numberComponent.unPress());
+  }
+
+  target = 0;
   constructor(props) {
 
     super(props);
@@ -36,19 +45,13 @@ export default class Game extends Component {
 
   currentSum = 0;
   pressed(val) {
-    //console.log('Game function');
-    //console.log(val);
     this.currentSum += val;
-    // the problem is here !!
-    // this is not my this
-    console.log(this.target);
     if(this.currentSum === this.target) {
-      // alert ('you are winner');
       Alert.alert(
         'Congratulation',
         'You Won!',
         [
-          {text: 'OK', onPress: () => console.log('OK Pressed')},
+          {text: 'OK'},
         ],
         { cancelable: false }
       );
@@ -57,9 +60,8 @@ export default class Game extends Component {
         'Ops!',
         'You Failed',
         [
-          {text: 'Try Again', onPress: () => console.log('OK Pressed')},
-        ],
-        { cancelable: false }
+          {text: 'Try Again' , onPress:  () =>{this.refresh();} }
+        ]
       );
     }
   }
