@@ -5,6 +5,7 @@ import Number from './Number' ;
 export default class Game extends Component {
   static propTypes = {
     numbersCount : PropTypes.number.isRequired,
+    lvl : PropTypes.number.isRequired,
   };
 
   random(x) {
@@ -16,7 +17,7 @@ export default class Game extends Component {
     this.numbersComponent.push(number);
   }
 
-  refresh() {
+  tryAgain() {
     this.currentSum = 0;
     this.numbersComponent.map( (numberComponent) => numberComponent.unPress());
   }
@@ -27,18 +28,23 @@ export default class Game extends Component {
     super(props);
     // this is a trial to take a random subset from the random
     // generated array! ... It's working now :)
-    this.randomNumbers = Array
+    this.state = {randomNumbers :Array()};
+    this.initGame(this.props.lvl);
+
+  }
+
+  initGame(lvl) {
+    this.state.randomNumbers = Array
       .from({length:this.props.numbersCount})
-      .map( () => this.random(10) +1 );
+      .map( () => this.random(lvl * 10) +1 );
     var usedNumbers = parseInt(this.props.numbersCount/2);
-    var redundantCopy = this.randomNumbers.slice();
+    var redundantCopy = this.state.randomNumbers.slice();
     while(usedNumbers--) {
       var randomIndex = this.random(redundantCopy.length);
       var cur = redundantCopy[randomIndex];
       this.target += cur;
       redundantCopy.splice(randomIndex,1);
     }
-
   }
 
 
@@ -60,7 +66,7 @@ export default class Game extends Component {
         'Ops!',
         'You Failed',
         [
-          {text: 'Try Again' , onPress:  () =>{this.refresh();} }
+          {text: 'Try Again' , onPress:  () =>{this.tryAgain();} }
         ]
       );
     }
@@ -76,7 +82,7 @@ export default class Game extends Component {
         </Text>
 
         {
-          this.randomNumbers.map( (number,index) => {
+          this.state.randomNumbers.map( (number,index) => {
             return <Number  parent = {this} value = {number}
               key ={index} idx={index} style = { {width:50}}/>;
           })}
