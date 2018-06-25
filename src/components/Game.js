@@ -2,10 +2,14 @@ import React, {Component} from 'react';
 import {Alert,View ,Text, StyleSheet } from 'react-native';
 import PropTypes from 'prop-types';
 import Number from './Number' ;
+import Timer from './Timer';
+
 export default class Game extends Component {
   static propTypes = {
     numbersCount : PropTypes.number.isRequired,
     lvl : PropTypes.number.isRequired,
+    seconds : PropTypes.number.isRequired,
+    score : PropTypes.number.isRequired,
   };
 
   random(x) {
@@ -17,7 +21,11 @@ export default class Game extends Component {
     this.numbersComponent.push(number);
   }
 
-  tryAgain() {
+  addTimer (timer) {
+    this.timer = timer;
+  }
+
+  refreshNumbers() {
     this.currentSum = 0;
     this.numbersComponent.map( (numberComponent) => numberComponent.unPress());
   }
@@ -28,57 +36,129 @@ export default class Game extends Component {
     super(props);
     // this is a trial to take a random subset from the random
     // generated array! ... It's working now :)
-    this.state = {randomNumbers :Array()};
-    this.initGame(this.props.lvl);
+    this.state = {randomNumbers :Array() ,seconds : this.props.seconds ,
+      target : 0 , lvl : this.props.lvl , score : this.props.score};
+    this.level = this.props.lvl;
+    this.score = this.props.score;
+    this.seconds = this.props.seconds;
+    this.initGame();
 
   }
 
-  initGame(lvl) {
-    this.state.randomNumbers = Array
-      .from({length:this.props.numbersCount})
-      .map( () => this.random(lvl * 10) +1 );
+  componentDidMount() {
+    this._isMounted = true;
+  }
+  initState() {
+    if(this._isMounted) {
+      this.setState( {randomNumbers : Array
+        .from({length:this.props.numbersCount})
+        .map( () => this.random(this.level * 10) +1) ,
+      seconds : this.seconds ,
+      target : 0 ,
+      lvl :this.level ,
+      score : this.score
+      } );
+    }
+    else {
+      this.state.randomNumbers = Array
+        .from({length:this.props.numbersCount})
+        .map( () => this.random(this.level * 10) +1);
+      this.state.seconds = this.seconds;
+      this.state.target = 0;
+      this.state.lvl = this.level;
+      this.state.score = this.score;
+    }
+  }
+
+  initGame() {
+
+    this.initState();
+    this.currentSum = 0;
     var usedNumbers = parseInt(this.props.numbersCount/2);
     var redundantCopy = this.state.randomNumbers.slice();
     while(usedNumbers--) {
       var randomIndex = this.random(redundantCopy.length);
       var cur = redundantCopy[randomIndex];
-      this.target += cur;
+      if(this._isMounted) {
+        this.setState({target : this.state.target + cur});
+      }else{
+        this.state.target += cur;
+      }
       redundantCopy.splice(randomIndex,1);
     }
   }
+
+  refreshTimer() {
+    if(this.timer) {
+      this.timer.setState({seconds:this.props.seconds});
+      this.timer.setTimer();
+    }
+  }
+
+
 
 
 
   currentSum = 0;
   pressed(val) {
     this.currentSum += val;
-    if(this.currentSum === this.target) {
+    if(this.currentSum === this.state.target) {
+      this.timer.stopTimer();
       Alert.alert(
         'Congratulation',
         'You Won!',
         [
-          {text: 'OK'},
+          {text: 'Next Level' , onPress :()=>{this.loadNextLevel();}},
         ],
         { cancelable: false }
       );
-    }else if(this.currentSum > this.target) {
+    }else if(this.currentSum > this.state.target) {
       Alert.alert(
         'Ops!',
         'You Failed',
         [
-          {text: 'Try Again' , onPress:  () =>{this.tryAgain();} }
+          {text: 'Try Again' , onPress:  () =>{this.refreshNumbers();} }
         ]
       );
     }
   }
 
 
+  timeOut() {
+    Alert.alert('Ops!' , 'Time Out!' ,
+      [
+        {text : 'refresh' , onPress : () =>{this.initGame();this.refreshTimer();this.refreshNumbers();}}
+      ]
+    );
+
+
+  }
+
+  loadNextLevel() {
+    this.seconds = Math.max(this.seconds -1 , 5);
+    this.score = this.score + this.level * 10;
+    this.level ++;
+
+    this.initGame();
+    this.refreshTimer();
+    this.refreshNumbers();
+  }
+
 
   render() {
     return (
       <View style ={styles.container}>
+        <View style = {styles.header}>
+          <Text style={styles.level}>
+          Lv : {this.state.lvl}
+          </Text>
+          <Text style={styles.score} >
+            Score : {this.state.score}
+          </Text>
+        </View>
+        <Timer parent = {this} seconds = {this.state.seconds} />
         <Text style={styles.target}>
-          {this.target}
+          Sum : {this.state.target}
         </Text>
 
         {
@@ -94,6 +174,21 @@ export default class Game extends Component {
 
 const styles = StyleSheet.create(
   {
+    score :{
+      fontSize : 20,
+      color : 'orange',
+    } ,
+    header : {
+      display : 'flex',
+      flexWrap : 'nowrap',
+      flexDirection : 'row',
+      justifyContent : 'space-around',
+    },
+    level :{
+      color : 'orange',
+
+      fontSize : 20,
+    },
     container:{
       paddingTop : 50,
       flex : 1,
